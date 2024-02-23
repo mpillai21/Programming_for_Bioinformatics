@@ -1,0 +1,42 @@
+# Gene Predicition and Annotation with Prodigal and Barnnap
+##This script was written as a part of an assignment(HW2) for the course BIOL7210 Computational Genomics 
+
+```
+#!/bin/bash
+conda create ex4
+conda activate ex4
+conda install -c bioconda -c conda-forge barrnap bedtools prodigal pigz -y
+
+
+# Fetch genome of fosfomycin resistant bacterium
+mkdir -pv ~/ex4/{ssu,cds}
+cd ~/ex4/ssu
+wget  https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/034/427/945/GCF_034427945.1_ASM3442794v1/GCF_034427945.1_ASM3442794v1_genomic.fna.gz
+gunzip -k *.fna.gz
+
+#Run Prodigal
+prodigal \
+ -i ~/ex4/ssu/GCF_034427945.1_ASM3442794v1_genomic.fna \
+ -c \
+ -m \
+ -f gbk \
+ -o cds.gbk \
+ 2>&1 | tee log.txt
+
+# Run barrnap
+barrnap \
+ GCF_034427945.1_ASM3442794v1_genomic.fna \
+ | grep "Name=16S_rRNA;product=16S ribosomal RNA" \
+ > 16S.gff
+bedtools getfasta \
+ -fi GCF_034427945.1_ASM3442794v1_genomic.fna \
+ -bed 16S.gff \
+ -fo 16S.fa
+
+pigz -9f *.gbk log.txt
+zhead *.gbk.gz
+zcat log.txt.gz
+
+cat 16S.fa
+pigz -9f *.fa *.gff
+```
